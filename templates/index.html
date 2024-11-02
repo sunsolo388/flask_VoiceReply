@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>智能语音助手</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: 0 auto; }
+        .response { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>智能语音助手</h1>
+        <button id="startRecording">开始录音</button>
+        <button id="stopRecording" style="display: none;">停止录音</button>
+        <div class="response" id="response"></div>
+
+        <h2>语音合成设置</h2>
+        <label>语速 (0-9): <input type="number" id="spd" min="0" max="9" value="5"></label><br>
+        <label>音调 (0-9): <input type="number" id="pit" min="0" max="9" value="5"></label><br>
+        <label>音量 (0-9): <input type="number" id="vol" min="0" max="9" value="5"></label><br>
+        <label>发音人 (0-4): <input type="number" id="per" min="0" max="4" value="4"></label><br>
+        <label>重音 (+1 到 +9): <input type="number" id="emphasis" min="1" max="9" value=""></label><br>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startRecording');
+        const stopButton = document.getElementById('stopRecording');
+        const responseDiv = document.getElementById('response');
+
+        let mediaRecorder;
+        let audioChunks = [];
+
+        startButton.addEventListener('click', async () => {
+            try {
+                console.log("请求麦克风权限...");
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                console.log("麦克风权限已授予");
+
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    console.log("录音已停止");
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.wav');
+
+                    const spd = document.getElementById('spd').value;
+                    const pit = document.getElementById('pit').value;
+                    const vol = document.getElementById('vol').value;
+                    const per = document.getElementById('per').value;
+                    const emphasis = document.getElementById('emphasis').value;
+
+                    console.log("发送音频数据到服务器...");
+                    const response = await fetch(`/transcribe?spd=${spd}&pit=${pit}&vol=${vol}&per=${per}&emphasis=${emphasis}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.response) {
+                        responseDiv.innerHTML = `<p>${result.response}</p>`;
+                        if (result.audio) {
+                            const audioUrl = URL.createObjectURL(new Blob([base64ToArrayBuffer(result.audio)], { type: 'audio/mp3' }));
+                            const audioElement = document.createElement('audio');
+                            audioElement.src = audioUrl;
+                            audioElement.controls = true;
+                            responseDiv.appendChild(audioElement);
+                        }
+                    } else {
+                        responseDiv.innerHTML = '<p>无法识别语音或生成响应</p>';
+                    }
+
+                    // 重置
+                    audioChunks = [];
+                };
+
+                mediaRecorder.start();
+                console.log("录音已开始");
+                startButton.style.display = 'none';
+                stopButton.style.display = 'block';
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                alert('请允许麦克风访问权限！');
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            console.log("停止录音...");
+            mediaRecorder.stop();
+            startButton.style.display = 'block';
+            stopButton.style.display = 'none';
+        });
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+    </script>
+</body>
+</html>
