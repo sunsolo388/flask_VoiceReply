@@ -16,7 +16,7 @@ class TestUtils(unittest.TestCase):
         self.secret_key = SECRET_KEY#替换为自己的
         self.test_excel_path = EXCEL_FILE_PATH  # 你的 Excel 文件路径
 
-        self.wav_file_path = './static/1.wav'  # 你的 WAV 文件路径
+        self.wav_file_path = 'D:\\PythonProject\\flaskProject\\static\\1.wav'  # 你的 WAV 文件路径
 
         # 获取访问令牌
         self.access_token = get_access_token(self.api_key, self.secret_key)

@@ -6,6 +6,7 @@ import base64
 import config
 import utils
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,8 +21,10 @@ def home():
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     try:
-        audio_data = request.files['audio'].read()
-        utils.save_audio_file(audio_data)  # 保存音频文件
+        audio_file = request.files['audio']
+        audio_file.save("voice_resource/audio.wav")
+        audio_data = audio_file.read()
+
 
         access_token = utils.get_access_token(config.API_KEY, config.SECRET_KEY)
         text = utils.speech_to_text(audio_data, access_token)
