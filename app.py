@@ -8,6 +8,8 @@ import utils
 import logging
 import os
 
+from utils import save_audio_file
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
@@ -22,7 +24,7 @@ def home():
 def transcribe():
     try:
         audio_file = request.files['audio']
-        audio_file.save("voice_resource/audio.wav")
+        save_audio_file(audio_file)
         audio_data = audio_file.read()
 
 

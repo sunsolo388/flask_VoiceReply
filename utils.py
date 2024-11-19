@@ -127,5 +127,4 @@ def save_audio_file(audio_data):
     filename = f"recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
     filepath = os.path.join('voice_resource', filename)
 
-    with open(filepath, 'wb') as audio_file:
-        audio_file.write(audio_data)
+    audio_data.save(filepath)
